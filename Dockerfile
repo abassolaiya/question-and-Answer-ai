@@ -15,5 +15,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project
 COPY . .
 
-
-CMD ["/qa_ai/entrypoint.sh"]
+ENTRYPOINT /qa_ai/entrypoint.sh
