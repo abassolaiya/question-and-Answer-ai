@@ -28,7 +28,7 @@ options:
   dynamic_substitutions: true
 
 substitutions:
-  _IMAGE_NAME: qa_ai-app
+  _IMAGE_NAME: qa-ai
   _IMAGE_VERSION: $SHORT_SHA
   _REGISTRY: gcr.io
   _PROJECT: codematic-playground

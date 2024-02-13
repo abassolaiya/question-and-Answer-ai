@@ -2,7 +2,7 @@
 set -ue
 REGISTRY="gcr.io"
 PROJECT_NAME="codematic-playground"
-IMAGE_NAME="qa_ai"
+IMAGE_NAME="qa-ai"
 IMAGE_ENV=${ENV}
 IMAGE_TAG=$(git rev-parse --short HEAD)
 SERVICE_NAME=${IMAGE_NAME}-${ENV}
