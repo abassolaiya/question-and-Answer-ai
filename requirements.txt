@@ -5,3 +5,4 @@ torch
 django
 django-cors-headers
 gunicorn
+django-rest-swagger
