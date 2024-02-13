@@ -1,7 +1,6 @@
-rest_framework
+djangorestframework
 transformers
 PyPDF2
 torch
-rest_framework
 django
-logging
+django-cors-headers
