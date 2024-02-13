@@ -1,0 +1,37 @@
+
+steps:
+- id: Build image
+  name: gcr.io/cloud-builders/docker
+  entrypoint: docker
+  args:
+    - build
+    - --file=./Dockerfile
+    - --tag=${_IMAGE}:dev-${_IMAGE_VERSION}
+    - --cache-from=${_IMAGE}:latest
+    - .
+
+- id: Push to registry
+  name: gcr.io/cloud-builders/docker
+  entrypoint: docker
+  args:
+    - push
+    - ${_IMAGE}:dev-${_IMAGE_VERSION}
+
+- id: Deploy to dev
+  name: gcr.io/cloud-builders/gcloud
+  entrypoint: 'bash'
+  args: ["./deploy-dev.sh"]
+  env:
+    - ENV=dev
+
+options:
+  dynamic_substitutions: true
+
+substitutions:
+  _IMAGE_NAME: qa_ai-app
+  _IMAGE_VERSION: $SHORT_SHA
+  _REGISTRY: gcr.io
+  _PROJECT: codematic-playground
+  _IMAGE: ${_REGISTRY}/${_PROJECT}/${_IMAGE_NAME}
+
+timeout: 3660s
