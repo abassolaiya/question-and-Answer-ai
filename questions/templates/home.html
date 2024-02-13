@@ -1,0 +1,180 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF Text Extractor and Summarizer</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+
+      h1 {
+        text-align: center;
+      }
+
+      form {
+        margin-top: 20px;
+        text-align: center;
+      }
+
+      textarea,
+      input[type="text"] {
+        width: 80%;
+        margin-bottom: 10px;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+
+      button {
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+
+      #summaryContainer,
+      #answerContainer {
+        margin-top: 20px;
+        text-align: center;
+      }
+
+      #summaryText,
+      #summaryText1 {
+        width: 80%;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>PDF Text Extractor and Summarizer</h1>
+
+    <form id="uploadForm" enctype="multipart/form-data">
+      <input type="file" id="pdfFile" name="pdf_file" accept=".pdf" required />
+      <button type="submit">Extract Text</button>
+    </form>
+
+    <div id="summaryContainer">
+      <!-- <h2>Summary</h2> -->
+      <textarea id="summaryText" rows="4" cols="50" readonly></textarea>
+    </div>
+    <div id="summaryContainer">
+      <h2>Summarization section</h2>
+    </div>
+    <form id="summaryForm">
+      <textarea
+        id="summaryContext"
+        name="input_text"
+        rows="4"
+        cols="50"
+        placeholder="Input Text"
+        required
+      ></textarea>
+      <button type="submit">Summarize</button>
+    </form>
+
+    <div id="summaryContainer">
+      <h2>Summary</h2>
+      <textarea id="summaryText1" rows="4" cols="50" readonly></textarea>
+    </div>
+    <div id="summaryContainer">
+      <h2>Question and Answer Section</h2>
+    </div>
+    <form id="qaForm">
+      <textarea
+        id="context"
+        name="context"
+        rows="4"
+        cols="50"
+        placeholder="Context"
+        required
+      ></textarea>
+      <input
+        type="text"
+        id="question"
+        name="question"
+        placeholder="Question"
+        required
+      />
+      <button type="submit">Get Answer</button>
+    </form>
+
+    <div id="answerContainer">
+      <h2>Answer</h2>
+      <p id="answerText"></p>
+    </div>
+    <script>
+      document
+        .getElementById("uploadForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+
+          const formData = new FormData();
+          formData.append(
+            "pdf_file",
+            document.getElementById("pdfFile").files[0]
+          );
+
+          try {
+            const response = await fetch("/api/pdf/upload/", {
+              method: "POST",
+              body: formData,
+            });
+            const data = await response.json();
+            document.getElementById("summaryText").value = data.pdf_text;
+            document.getElementById("summaryContext").value = data.pdf_text;
+            document.getElementById("context").value = data.pdf_text;
+          } catch (error) {
+            console.error("Error:", error);
+          }
+        });
+
+      document
+        .getElementById("summaryForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+
+          const formData = new FormData(document.getElementById("summaryForm"));
+
+          try {
+            const response = await fetch("/api/summarize/", {
+              method: "POST",
+              body: formData,
+            });
+            const data = await response.json();
+            document.getElementById("summaryText1").value =
+              data.summarized_text;
+          } catch (error) {
+            console.error("Error:", error);
+          }
+        });
+
+      document
+        .getElementById("qaForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+
+          const formData = new FormData(document.getElementById("qaForm"));
+
+          try {
+            const response = await fetch("/api/qa/", {
+              method: "POST",
+              body: formData,
+            });
+            const data = await response.json();
+            document.getElementById("answerText").innerText = data.answer;
+          } catch (error) {
+            console.error("Error:", error);
+          }
+        });
+    </script>
+  </body>
+</html>
