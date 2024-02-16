@@ -1,3 +1,5 @@
+from .models import QuestionAnswer
+import fitz
 from transformers import BertTokenizer, BertForQuestionAnswering, pipeline
 import re
 from PyPDF2 import PdfReader
@@ -49,61 +51,23 @@ class PDFDocumentUploadAPIView(APIView):
 
     def extract_text_from_pdf(self, pdf_file):
         pdf_file.seek(0)  # Ensure the file pointer is at the beginning
-        # Read the file data into a BytesIO object
-        pdf_data = BytesIO(pdf_file.read())
-        pdf_reader = PdfReader(pdf_data)  # Create a PDF file reader object
 
         text = ''
-        for page_num in range(len(pdf_reader.pages)):  # Loop through all the pages
-            # Extract the text from the page
-            page_text = pdf_reader.pages[page_num].extract_text()
-            # Replace newline characters with spaces
+        doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
+
+        for page_num in range(doc.page_count):
+            page = doc.load_page(page_num)
+
+            page_text = page.get_text()
+
             page_text = re.sub(r'\n', ' ', page_text)
-            # Remove extra spaces
             page_text = re.sub(r'\s+', ' ', page_text)
-            text += page_text.strip()  # Add cleaned-up text to the result
+
+            text += page_text.strip()
+
+        doc.close()
 
         return text
-
-
-class PDFDocumentListCreateAPIView(generics.ListCreateAPIView):
-    queryset = PDFDocument.objects.all()
-    serializer_class = PDFDocumentSerializer
-
-    def perform_create(self, serializer):
-        uploaded_file = self.request.FILES.get('pdf_file')
-        if uploaded_file:
-            pdf_text = self.extract_text_from_pdf(uploaded_file)
-            if pdf_text is not None:
-                serializer.save(pdf_file=uploaded_file, pdf_text=pdf_text)
-            else:
-                logging.warning("No text extracted from the PDF.")
-                serializer.save(pdf_file=uploaded_file)  # Save without text
-        else:
-            serializer.save()
-
-    def extract_text_from_pdf(self, pdf_file):
-        pdf_file.seek(0)  # Ensure the file pointer is at the beginning
-        # Read the file data into a BytesIO object
-        pdf_data = BytesIO(pdf_file.read())
-        pdf_reader = PdfReader(pdf_data)  # Create a PDF file reader object
-
-        text = ''
-        for page_num in range(len(pdf_reader.pages)):  # Loop through all the pages
-            # Extract the text from the page
-            page_text = pdf_reader.pages[page_num].extract_text()
-            # Replace newline characters with spaces
-            page_text = re.sub(r'\n', ' ', page_text)
-            # Remove extra spaces
-            page_text = re.sub(r'\s+', ' ', page_text)
-            text += page_text.strip()  # Add cleaned-up text to the result
-
-        return text
-
-
-class PDFDocumentRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = PDFDocument.objects.all()
-    serializer_class = PDFDocumentSerializer
 
 
 class TextSummarizationAPIView(APIView):
@@ -118,11 +82,12 @@ class TextSummarizationAPIView(APIView):
             if len(input_text) <= 1024:
                 summarizer = pipeline("summarization")
                 summarized_text = summarizer(
-                    input_text, max_length=150, min_length=30, do_sample=False)[0]['summary_text']
+                    input_text, max_length=200, min_length=30, do_sample=False)[0]['summary_text']
             else:
                 # Split the input text into chunks of maximum length 1020 characters
                 chunk_size = 1020
-                chunks = [input_text[i:i + chunk_size] for i in range(0, len(input_text), chunk_size)]
+                chunks = [input_text[i:i + chunk_size]
+                          for i in range(0, len(input_text), chunk_size)]
                 summarized_chunks = []
 
                 # Summarize each chunk individually
@@ -135,7 +100,8 @@ class TextSummarizationAPIView(APIView):
                 # Combine the summarized chunks into a single text
                 summarized_text = " ".join(summarized_chunks)
 
-            response_data = {'input_text': input_text, 'summarized_text': summarized_text}
+            response_data = {'input_text': input_text,
+                             'summarized_text': summarized_text}
             return Response(response_data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -153,7 +119,13 @@ class QuestionAnswerAPIView(APIView):
 
             if question and context:
                 qa_response = qa_model(question=question, context=context)
-                return Response({'question': question, 'context': context, 'answer': qa_response['answer']}, status=status.HTTP_200_OK)
+                answer = qa_response['answer']
+                # Create and save the instance of QuestionAnswer model
+                instance = QuestionAnswer.objects.create(
+                    question=question, context=context, answer=answer)
+                # Serialize the instance and return the data
+                serialized_instance = self.serializer_class(instance)
+                return Response(serialized_instance.data, status=status.HTTP_200_OK)
             else:
                 return Response({'error': 'Question or context not provided.'}, status=status.HTTP_400_BAD_REQUEST)
         else:

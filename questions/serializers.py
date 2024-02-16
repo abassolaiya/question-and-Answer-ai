@@ -1,3 +1,4 @@
+from .models import QuestionAnswer
 from rest_framework import serializers
 from .models import PDFDocument
 
@@ -19,7 +20,7 @@ class TextSummarizationSerializer(serializers.Serializer):
     summarized_text = serializers.CharField(required=False)
 
 
-class QuestionAnswerSerializer(serializers.Serializer):
-    context = serializers.CharField(max_length=200000)  # Add passage field
-    question = serializers.CharField(max_length=355)
-    answer = serializers.CharField(max_length=2000, required=False)
+class QuestionAnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuestionAnswer
+        fields = '__all__'

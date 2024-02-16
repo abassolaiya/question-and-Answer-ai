@@ -9,3 +9,12 @@ class PDFDocument(models.Model):
 
     def __str__(self):
         return self.pdf_file.name
+
+
+class QuestionAnswer(models.Model):
+    context = models.TextField()
+    question = models.CharField(max_length=355)
+    answer = models.CharField(max_length=2000, blank=True)
+
+    def __str__(self):
+        return f"Question: {self.question}, Answer: {self.answer}"

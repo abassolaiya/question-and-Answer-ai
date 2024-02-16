@@ -52,6 +52,35 @@
       #summaryText1 {
         width: 80%;
       }
+
+      /* New CSS for question and answer section */
+      #questionAnswerContainer {
+        margin-top: 20px;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+
+      .questionItem,
+      .answerItem {
+        width: 48%; /* Adjust as needed */
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 10px;
+        box-sizing: border-box;
+      }
+
+      .questionItem {
+        float: right;
+        background-color: #f9f9f9;
+      }
+
+      .answerItem {
+        float: left;
+        background-color: #e6f7ff;
+      }
     </style>
   </head>
   <body>
@@ -88,6 +117,10 @@
     <div id="summaryContainer">
       <h2>Question and Answer Section</h2>
     </div>
+    <div id="questionAnswerContainer">
+      <div id="questionList" class="questionItem"></div>
+      <div id="answerList" class="answerItem"></div>
+    </div>
     <form id="qaForm">
       <textarea
         id="context"
@@ -112,6 +145,9 @@
       <p id="answerText"></p>
     </div>
     <script>
+      // Array to store questions and answers
+      const questionAnswerList = [];
+
       document
         .getElementById("uploadForm")
         .addEventListener("submit", async function (event) {
@@ -171,10 +207,33 @@
             });
             const data = await response.json();
             document.getElementById("answerText").innerText = data.answer;
+            const question = formData.get("question");
+            const answer = data.answer;
+            // Add question and answer to the list
+            questionAnswerList.push({ question, answer });
+            // Update the question and answer list on the UI
+            updateQuestionAnswerList();
           } catch (error) {
             console.error("Error:", error);
           }
         });
+
+      // Function to update the question and answer list on the UI
+      function updateQuestionAnswerList() {
+        const questionListElement = document.getElementById("questionList");
+        const answerListElement = document.getElementById("answerList");
+        questionListElement.innerHTML = "";
+        answerListElement.innerHTML = "";
+        questionAnswerList.forEach((item) => {
+          const questionItem = document.createElement("div");
+          questionItem.textContent = `Question: ${item.question}`;
+          questionListElement.appendChild(questionItem);
+
+          const answerItem = document.createElement("div");
+          answerItem.textContent = `Answer: ${item.answer}`;
+          answerListElement.appendChild(answerItem);
+        });
+      }
     </script>
   </body>
 </html>
